@@ -1,4 +1,8 @@
+python-dotenv
+google-generativeai
+google-genai
 Flask
 Flask-SQLAlchemy
 werkzeug
 mysql-connector-python
+
