@@ -32,7 +32,7 @@
             android:id="@+id/ingredient_edit_name"
             android:layout_width="100dp"
             android:layout_height="30dp"
-            android:background="@drawable/ingredients_searchbar"
+            android:background="@drawable/ingredients_smaller_input_box"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/textView" />
@@ -62,7 +62,8 @@
             android:id="@+id/ingredient_edit_quanitity"
             android:layout_width="50dp"
             android:layout_height="30dp"
-            android:background="@drawable/ingredients_searchbar"
+            android:inputType="number"
+            android:background="@drawable/ingredients_smaller_input_box"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -98,7 +99,7 @@
             android:id="@+id/ingredient_edit_unit"
             android:layout_width="50dp"
             android:layout_height="30dp"
-            android:background="@drawable/ingredients_searchbar"
+            android:background="@drawable/ingredients_smaller_input_box"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -106,35 +107,6 @@
 
 
     </androidx.constraintlayout.widget.ConstraintLayout>
-
-    <Button
-        android:id="@+id/ingredients_okay_btn"
-        android:text="OK"
-        android:textSize="15dp"
-        android:layout_width="wrap_content"
-        android:layout_height="40dp"
-        android:layout_marginEnd="84dp"
-        android:background="@drawable/ingredients_button_shape"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.866" />
-
-    <Button
-        android:id="@+id/ingredients_cancel_btn"
-        android:layout_width="wrap_content"
-        android:layout_height="40dp"
-        android:layout_marginStart="16dp"
-        android:background="@drawable/ingredients_button_shape"
-        android:backgroundTint="@color/white"
-        android:text="Cancel"
-        android:textSize="15dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/ingredients_okay_btn"
-        app:layout_constraintHorizontal_bias="0.186"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.863" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

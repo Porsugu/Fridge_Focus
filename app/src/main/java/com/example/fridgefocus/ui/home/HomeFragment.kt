@@ -22,6 +22,8 @@ import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Environment
 import android.telecom.Call
+import android.util.Log
+import android.widget.EditText
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -41,6 +43,14 @@ class HomeFragment : Fragment() {
     private var _binding: FragmentHomeBinding? = null
     private val CAMERA_REQUEST_CODE = 1001
     private var photoUri: Uri? = null
+
+    private lateinit var editName: EditText
+    private lateinit var editQuantity:EditText
+    private lateinit var editUnit:EditText
+
+    private var name : String = ""
+    private var quantity : Int = -1
+    private var unit : String = ""
 
     // This property is only valid between onCreateView and
     // onDestroyView.
@@ -87,6 +97,8 @@ class HomeFragment : Fragment() {
         // Edit button
         dialogView.findViewById<ImageButton>(R.id.btnEdit).setOnClickListener {
             // Handle edit action
+            showAddDialog()
+            dialog.dismiss()
 
         }
 
@@ -104,7 +116,26 @@ class HomeFragment : Fragment() {
 
     //this is the edit dialog for adding items
     private fun showAddDialog(){
+        val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialoginputbinding, null)
 
+        editName = dialogView.findViewById(R.id.ingredient_edit_name)
+        editQuantity = dialogView.findViewById(R.id.ingredient_edit_quanitity)
+        editUnit = dialogView.findViewById(R.id.ingredient_edit_unit)
+
+        AlertDialog.Builder(requireContext())
+            .setTitle("Edit Info")
+            .setView(dialogView)
+            .setPositiveButton("OK") { _, _ ->
+                name = editName.text.toString()
+                quantity = editQuantity.text.toString().toIntOrNull() ?: -1// default -1 if input is invalid
+                unit = editUnit.text.toString()
+                // Save or use variables here
+                    Log.d("DialogResult", "Name: $name, Quantity: $quantity, Unit: $unit")
+
+            }
+            .setNegativeButton("Cancel", null)
+            .create()
+            .show()
     }
 
 
