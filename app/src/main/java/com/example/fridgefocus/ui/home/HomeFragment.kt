@@ -1,5 +1,6 @@
 package com.example.fridgefocus.ui.home
 
+import Item
 import android.Manifest
 import android.app.AlertDialog
 import android.content.Intent
@@ -27,6 +28,9 @@ import android.widget.EditText
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.example.fridgefocus.ItemAdapter
 import com.google.firebase.crashlytics.buildtools.reloc.com.google.common.net.MediaType
 //import okhttp3.MediaType
 //import okhttp3.MultipartBody
@@ -52,8 +56,11 @@ class HomeFragment : Fragment() {
     private var quantity : Int = -1
     private var unit : String = ""
 
-    // This property is only valid between onCreateView and
-    // onDestroyView.
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var adapter: ItemAdapter
+    private val items = mutableListOf<Item>()   //this one will be deleted later
+
+    // This property is only valid between onCreateView and onDestroyView.
     private val binding get() = _binding!!
     private lateinit var add_button:Button
 
@@ -66,10 +73,14 @@ class HomeFragment : Fragment() {
             ViewModelProvider(this).get(HomeViewModel::class.java)
 
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
-        val root: View = binding.root
+        val view = inflater.inflate(R.layout.fragment_home,container,false)
+        recyclerView = view.findViewById(R.id.ingredient_list)
 
+        adapter = ItemAdapter(items)
+        recyclerView.layoutManager = LinearLayoutManager(requireContext())
+        recyclerView.adapter = adapter
 
-        return root
+        return view
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -131,6 +142,10 @@ class HomeFragment : Fragment() {
                 unit = editUnit.text.toString()
                 // Save or use variables here
                     Log.d("DialogResult", "Name: $name, Quantity: $quantity, Unit: $unit")
+
+
+                //adding the item
+                items.add(Item(name,quantity, unit))
 
             }
             .setNegativeButton("Cancel", null)
