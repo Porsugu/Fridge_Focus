@@ -92,14 +92,7 @@ class HomeFragment : Fragment() {
 
         // Camera button
         dialogView.findViewById<ImageButton>(R.id.btnCamera).setOnClickListener {
-            // Handle camera action
-            // Check for camera permission
-//            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-//                openCamera()
-//            } else {
-//                // Request permission
-//                ActivityCompat.requestPermissions(requireActivity(), arrayOf(Manifest.permission.CAMERA), CAMERA_REQUEST_CODE)
-//            }
+
             dialog.dismiss() // Optional: close the dialog when opening camera
         }
 
@@ -109,74 +102,11 @@ class HomeFragment : Fragment() {
 
     }
 
-//    private fun openCamera() {
-//        // Create an Intent to capture the photo
-//        val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-//
-//        // Check if the device has a camera app available
-//        if (takePictureIntent.resolveActivity(requireContext().packageManager) != null) {
-//            // Create a temporary file to store the photo
-//            val photoFile: File = createImageFile()
-//
-//            // Get URI for the file
-//            photoUri = FileProvider.getUriForFile(requireContext(), "${requireContext().packageName}.fileprovider", photoFile)
-//
-//            // Set the URI to the Intent
-//            takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
-//
-//            // Start the camera activity
-//            startActivityForResult(takePictureIntent, CAMERA_REQUEST_CODE)
-//        }
-//    }
-//
-//    // File to store the image
-//    private lateinit var currentPhotoPath: String
-//    private val REQUEST_IMAGE_CAPTURE = 1
-//
-//    private fun createImageFile(): File {
-//        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-//        val storageDir = requireContext().getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-//        return File.createTempFile("JPEG_${timestamp}_", ".jpg", storageDir)
-//    }
-//
-//    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-//        super.onActivityResult(requestCode, resultCode, data)
-//        if (requestCode == CAMERA_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
-//            // The photo is saved at photoUri
-//            photoUri?.let { uri ->
-//                // You can now send the photo to the API
-////                sendPhotoToApi(uri)
-//            }
-//        }
-//    }
+    //this is the edit dialog for adding items
+    private fun showAddDialog(){
 
-//    private fun sendPhotoToApi(uri: Uri) {
-//        // Send the captured image to an API
-//        val file = File(uri.path!!)
-//        val requestBody = file.asRequestBody("image/jpeg".toMediaTypeOrNull())
-//
-//        val multipartBody = MultipartBody.Part.createFormData("photo", file.name, requestBody)
-//
-//        val apiService = ApiClient.createService(ApiService::class.java)
-//        val call = apiService.uploadPhoto(multipartBody)
-//
-//        call.enqueue(object : Callback<ApiResponse> {
-//            override fun onResponse(call: Call<ApiResponse>, response: Response<ApiResponse>) {
-//                if (response.isSuccessful) {
-//                    // Handle success
-//                    Toast.makeText(requireContext(), "Photo uploaded!", Toast.LENGTH_SHORT).show()
-//                } else {
-//                    // Handle failure
-//                    Toast.makeText(requireContext(), "Upload failed", Toast.LENGTH_SHORT).show()
-//                }
-//            }
-//
-//            override fun onFailure(call: Call<ApiResponse>, t: Throwable) {
-//                // Handle error
-//                Toast.makeText(requireContext(), "Error: ${t.message}", Toast.LENGTH_SHORT).show()
-//            }
-//        })
-//    }
+    }
+
 
     override fun onDestroyView() {
         super.onDestroyView()
