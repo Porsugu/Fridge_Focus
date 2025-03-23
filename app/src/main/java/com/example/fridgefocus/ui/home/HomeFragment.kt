@@ -19,13 +19,18 @@ import com.example.fridgefocus.databinding.FragmentHomeBinding
 import java.io.File
 import java.io.IOException
 import android.app.Activity
+import android.content.ContentValues
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Environment
 import android.telecom.Call
+import android.widget.ImageView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.google.firebase.crashlytics.buildtools.reloc.com.google.common.net.MediaType
+import java.io.FileOutputStream
 //import okhttp3.MediaType
 //import okhttp3.MultipartBody
 //import okhttp3.RequestBody
@@ -40,12 +45,41 @@ class HomeFragment : Fragment() {
 
     private var _binding: FragmentHomeBinding? = null
     private val CAMERA_REQUEST_CODE = 1001
-    private var photoUri: Uri? = null
+
 
     // This property is only valid between onCreateView and
     // onDestroyView.
     private val binding get() = _binding!!
     private lateinit var add_button:Button
+
+    private lateinit var photoButton: Button
+    private lateinit var photoPreview: ImageView
+
+    private lateinit var openDialogButton: Button
+    private var currentPhotoPath: String = ""
+    private var photoUri: Uri? = null
+
+    // Camera result launcher
+    private val takePictureLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            // Photo was taken successfully
+            savePhotoToAppStorage()
+            Toast.makeText(requireContext(), "Photo saved successfully!", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // Permission launcher
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            dispatchTakePictureIntent()
+        } else {
+            Toast.makeText(requireContext(), "Camera permission denied", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -94,12 +128,19 @@ class HomeFragment : Fragment() {
         dialogView.findViewById<ImageButton>(R.id.btnCamera).setOnClickListener {
             // Handle camera action
             // Check for camera permission
-//            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-//                openCamera()
-//            } else {
-//                // Request permission
-//                ActivityCompat.requestPermissions(requireActivity(), arrayOf(Manifest.permission.CAMERA), CAMERA_REQUEST_CODE)
-//            }
+//            checkCameraPermission()
+            // Check for camera permission
+            if (ContextCompat.checkSelfPermission(
+                    requireContext(),
+                    Manifest.permission.CAMERA
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                // We have permission, launch camera
+                dispatchTakePictureIntent()
+            } else {
+                // Request camera permission
+                requestPermissionLauncher.launch(Manifest.permission.CAMERA)
+            }
             dialog.dismiss() // Optional: close the dialog when opening camera
         }
 
@@ -109,74 +150,86 @@ class HomeFragment : Fragment() {
 
     }
 
-//    private fun openCamera() {
-//        // Create an Intent to capture the photo
-//        val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-//
-//        // Check if the device has a camera app available
-//        if (takePictureIntent.resolveActivity(requireContext().packageManager) != null) {
-//            // Create a temporary file to store the photo
-//            val photoFile: File = createImageFile()
-//
-//            // Get URI for the file
-//            photoUri = FileProvider.getUriForFile(requireContext(), "${requireContext().packageName}.fileprovider", photoFile)
-//
-//            // Set the URI to the Intent
-//            takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
-//
-//            // Start the camera activity
-//            startActivityForResult(takePictureIntent, CAMERA_REQUEST_CODE)
-//        }
-//    }
-//
-//    // File to store the image
-//    private lateinit var currentPhotoPath: String
-//    private val REQUEST_IMAGE_CAPTURE = 1
-//
-//    private fun createImageFile(): File {
-//        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-//        val storageDir = requireContext().getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-//        return File.createTempFile("JPEG_${timestamp}_", ".jpg", storageDir)
-//    }
-//
-//    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-//        super.onActivityResult(requestCode, resultCode, data)
-//        if (requestCode == CAMERA_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
-//            // The photo is saved at photoUri
-//            photoUri?.let { uri ->
-//                // You can now send the photo to the API
-////                sendPhotoToApi(uri)
-//            }
-//        }
-//    }
+    private fun dispatchTakePictureIntent() {
+        val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
 
-//    private fun sendPhotoToApi(uri: Uri) {
-//        // Send the captured image to an API
-//        val file = File(uri.path!!)
-//        val requestBody = file.asRequestBody("image/jpeg".toMediaTypeOrNull())
-//
-//        val multipartBody = MultipartBody.Part.createFormData("photo", file.name, requestBody)
-//
-//        val apiService = ApiClient.createService(ApiService::class.java)
-//        val call = apiService.uploadPhoto(multipartBody)
-//
-//        call.enqueue(object : Callback<ApiResponse> {
-//            override fun onResponse(call: Call<ApiResponse>, response: Response<ApiResponse>) {
-//                if (response.isSuccessful) {
-//                    // Handle success
-//                    Toast.makeText(requireContext(), "Photo uploaded!", Toast.LENGTH_SHORT).show()
-//                } else {
-//                    // Handle failure
-//                    Toast.makeText(requireContext(), "Upload failed", Toast.LENGTH_SHORT).show()
-//                }
-//            }
-//
-//            override fun onFailure(call: Call<ApiResponse>, t: Throwable) {
-//                // Handle error
-//                Toast.makeText(requireContext(), "Error: ${t.message}", Toast.LENGTH_SHORT).show()
-//            }
-//        })
-//    }
+        // Ensure there's a camera activity to handle the intent
+        takePictureIntent.resolveActivity(requireActivity().packageManager)?.also {
+            // Create the file where the photo should go
+            val photoFile: File? = try {
+                createTempImageFile()
+            } catch (ex: IOException) {
+                Toast.makeText(requireContext(), "Error creating image file", Toast.LENGTH_SHORT).show()
+                null
+            }
+
+            // Continue only if the file was successfully created
+            photoFile?.also {
+                photoUri = FileProvider.getUriForFile(
+                    requireContext(),
+                    "${requireContext().packageName}.fileprovider",
+                    it
+                )
+                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
+                takePictureLauncher.launch(takePictureIntent)
+            }
+        } ?: run {
+            Toast.makeText(requireContext(), "No camera app found", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    @Throws(IOException::class)
+    private fun createTempImageFile(): File {
+        // Create an image file name
+        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val imageFileName = "JPEG_${timeStamp}_"
+        val storageDir = requireContext().cacheDir
+
+        return File.createTempFile(
+            imageFileName, /* prefix */
+            ".jpg", /* suffix */
+            storageDir /* directory */
+        ).apply {
+            // Save the path for later
+            currentPhotoPath = absolutePath
+        }
+    }
+
+    private fun savePhotoToAppStorage() {
+        try {
+            // Get source file
+            val sourceFile = File(currentPhotoPath)
+
+            // Get app's root directory for saving
+            val appDir = requireContext().filesDir
+
+            // Create unique filename
+            val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+            val destinationFile = File(appDir, "Photo_$timeStamp.jpg")
+
+            // Copy file to app storage
+            sourceFile.inputStream().use { input ->
+                FileOutputStream(destinationFile).use { output ->
+                    input.copyTo(output)
+                }
+            }
+
+            // Delete temp file
+            sourceFile.delete()
+
+            // Optional: Notify activity about the photo save
+            (activity as? PhotoListener)?.onPhotoSaved(destinationFile.absolutePath)
+
+        } catch (e: Exception) {
+            Toast.makeText(requireContext(), "Error saving photo: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // Interface for communicating with the activity if needed
+    interface PhotoListener {
+        fun onPhotoSaved(photoPath: String)
+    }
+
 
     override fun onDestroyView() {
         super.onDestroyView()
