@@ -54,11 +54,13 @@ def index():
         print(f"Error: {e}")
         return f"Error connecting to database: {e}", 500
 
+# Retrieve the whole list of ingredients
 @app.route('/inventory', methods=['GET'])
 def get_inventory():
     inventory = Inventory.query.all()
     return jsonify([{'name': item.name, 'quantity': item.quantity, 'unit': item.unit} for item in inventory])
 
+# Search for Ingredients by name
 @app.route('/inventory/<string:name>', methods=['GET'])
 def get_inventory_item(name):
     # Look up the item by name (now the primary key)
@@ -69,6 +71,7 @@ def get_inventory_item(name):
         'unit': item.unit
     })
 
+# Add Ingredients manually
 @app.route('/addInventory', methods=['POST'])
 def create_inventory():
     data = request.get_json()
@@ -95,6 +98,7 @@ def create_inventory():
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+# Update quantity/unit of inventory 
 @app.route('/updateInventory/<string:name>', methods=['PUT'])
 def update_inventory(name):
     item = Inventory.query.get_or_404(name)
@@ -119,6 +123,7 @@ def update_inventory(name):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+# Delete Ingredients from list 
 @app.route('/deleteInventory/<string:name>', methods=['DELETE'])
 def delete_inventory(name):
     item = Inventory.query.get_or_404(name)
@@ -143,6 +148,7 @@ def get_recipes():
         'url': recipe.url
     } for recipe in recipes])
 
+# Retrieve/get all of the recipes (for History)
 @app.route('/recipes/<string:name>', methods=['GET'])
 def get_recipe(name):
     # Look up the recipe by name instead of id
@@ -160,6 +166,7 @@ def get_recipe(name):
         'ingredients': ingredients_list
     })
 
+# Add Recipes: Will be called when user save the recipe
 @app.route('/addRecipes', methods=['POST'])
 def create_recipe():
     data = request.get_json()
