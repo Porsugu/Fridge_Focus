@@ -69,10 +69,10 @@
         tools:layout_editor_absoluteX="36dp" />
 
     <Button
+        android:id="@+id/ingredients_add_btn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@drawable/ingredients_button_shape"
-
         android:text="Add +"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
