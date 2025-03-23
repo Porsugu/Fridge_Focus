@@ -31,7 +31,7 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.fridgefocus.ItemAdapter
-import com.google.firebase.crashlytics.buildtools.reloc.com.google.common.net.MediaType
+import com.example.fridgefocus.ItemSpacingDecoration
 //import okhttp3.MediaType
 //import okhttp3.MultipartBody
 //import okhttp3.RequestBody
@@ -75,6 +75,7 @@ class HomeFragment : Fragment() {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
         val view = inflater.inflate(R.layout.fragment_home,container,false)
         recyclerView = view.findViewById(R.id.ingredient_list)
+        recyclerView.addItemDecoration(ItemSpacingDecoration(16))
 
         adapter = ItemAdapter(items)
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
@@ -143,9 +144,9 @@ class HomeFragment : Fragment() {
                 // Save or use variables here
                     Log.d("DialogResult", "Name: $name, Quantity: $quantity, Unit: $unit")
 
-
                 //adding the item
                 items.add(Item(name,quantity, unit))
+                adapter.notifyItemInserted(items.size - 1)
 
             }
             .setNegativeButton("Cancel", null)
