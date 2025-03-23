@@ -89,12 +89,26 @@ def post_recipe_to_api(recipe_json):
         print(f"Error posting to API: {e}")
         return False
 
-def generate(prompt):
+def generate():
     client = genai.Client(
         api_key=os.environ.get("GEMINI_API_KEY"),
     )
-
+    
     # Prompt goes here
+    inventory_list = []
+    # TODO: Get list of ingredients
+    inventory_list = ['apple', 'banana', 'garlic', 'onion', 'beef', 'chicken', 'spinach']
+
+    prompt = (
+        f"Give me a recipe with the following ingredients (don't need to use all): {inventory_list}. "
+        "Make the format to be ingredients first with a title of ingredients on the first line, "
+        '"-" "1 space" "number" "measurement like kg or ml" "ingredient". '
+        'After the list of ingredients, add a title for "Instructions", with the format '
+        '"1." "1 space" "step 1". So, the first line is "the food name", the second line is "title Ingredients", '
+        'the third line and until the end of the ingredient list, the following line is "the title Instructions", '
+        "then the next lines are the instructions. No need spaces between line."
+    )
+
     model = "gemini-2.0-flash"
     contents = [
         types.Content(
@@ -141,4 +155,5 @@ def generate(prompt):
 
 if __name__ == "__main__":
     user_input = input("Enter your prompt (e.g., 'Generate a recipe for chocolate cake'): ")
-    generate(user_input)
+    # generate(user_input)
+    generate()

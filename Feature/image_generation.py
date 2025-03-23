@@ -37,7 +37,7 @@ def save_image(response, path):
       pathlib.Path(path).write_bytes(data)
 
 # Prompt goes here
-contents = 'Generate a omelette'
+contents = f"Generate an image of a {name}"
 
 response = client.models.generate_content(
     model=MODEL_ID,
@@ -48,13 +48,13 @@ response = client.models.generate_content(
 )
 
 display_response(response)
-save_image(response, 'omelette.png')
+save_image(response, 'Feature/generated_image.png')
 
 
 
 # ==================== Get URL of image ====================
 API_KEY = os.environ.get("IMGBB_API_KEY")
-IMAGE_PATH = 'omelette.png'
+IMAGE_PATH = 'Feature/generated_image.png'
 UPLOAD_URL = 'https://api.imgbb.com/1/upload'
 
 def upload_image_to_imgbb(image_path, api_key):
@@ -74,14 +74,16 @@ def upload_image_to_imgbb(image_path, api_key):
     # Handle the response
     if response.status_code == 200:
         image_url = response.json()['data']['url']
-        print('✅ Image uploaded successfully!')
-        print('🌐 Image URL:', image_url)
+        print('Image uploaded successfully!')
+        print('Image URL:', image_url)
         return image_url
     else:
-        print('❌ Upload failed.')
+        print('Upload failed.')
         print('Status Code:', response.status_code)
         print('Response:', response.text)
         return None
+    
+    os.remove(image_path)
 
 # Run it
 if __name__ == '__main__':
