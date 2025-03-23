@@ -1,5 +1,6 @@
 package com.example.fridgefocus.ui.home
 
+import Item
 import android.Manifest
 import android.app.AlertDialog
 import android.content.Intent
@@ -19,18 +20,18 @@ import com.example.fridgefocus.databinding.FragmentHomeBinding
 import java.io.File
 import java.io.IOException
 import android.app.Activity
-import android.content.ContentValues
 import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Environment
 import android.telecom.Call
-import android.widget.ImageView
+import android.util.Log
+import android.widget.EditText
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.google.firebase.crashlytics.buildtools.reloc.com.google.common.net.MediaType
-import java.io.FileOutputStream
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.example.fridgefocus.ItemAdapter
+import com.example.fridgefocus.ItemSpacingDecoration
 //import okhttp3.MediaType
 //import okhttp3.MultipartBody
 //import okhttp3.RequestBody
@@ -45,41 +46,23 @@ class HomeFragment : Fragment() {
 
     private var _binding: FragmentHomeBinding? = null
     private val CAMERA_REQUEST_CODE = 1001
-
-
-    // This property is only valid between onCreateView and
-    // onDestroyView.
-    private val binding get() = _binding!!
-    private lateinit var add_button:Button
-
-    private lateinit var photoButton: Button
-    private lateinit var photoPreview: ImageView
-
-    private lateinit var openDialogButton: Button
-    private var currentPhotoPath: String = ""
     private var photoUri: Uri? = null
 
-    // Camera result launcher
-    private val takePictureLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            // Photo was taken successfully
-            savePhotoToAppStorage()
-            Toast.makeText(requireContext(), "Photo saved successfully!", Toast.LENGTH_SHORT).show()
-        }
-    }
+    private lateinit var editName: EditText
+    private lateinit var editQuantity:EditText
+    private lateinit var editUnit:EditText
 
-    // Permission launcher
-    private val requestPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            dispatchTakePictureIntent()
-        } else {
-            Toast.makeText(requireContext(), "Camera permission denied", Toast.LENGTH_SHORT).show()
-        }
-    }
+    private var name : String = ""
+    private var quantity : Int = -1
+    private var unit : String = ""
+
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var adapter: ItemAdapter
+    private val items = mutableListOf<Item>()   //this one will be deleted later
+
+    // This property is only valid between onCreateView and onDestroyView.
+    private val binding get() = _binding!!
+    private lateinit var add_button:Button
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -90,10 +73,15 @@ class HomeFragment : Fragment() {
             ViewModelProvider(this).get(HomeViewModel::class.java)
 
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
-        val root: View = binding.root
+        val view = inflater.inflate(R.layout.fragment_home,container,false)
+        recyclerView = view.findViewById(R.id.ingredient_list)
+        recyclerView.addItemDecoration(ItemSpacingDecoration(16))
 
+        adapter = ItemAdapter(items)
+        recyclerView.layoutManager = LinearLayoutManager(requireContext())
+        recyclerView.adapter = adapter
 
-        return root
+        return view
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -121,26 +109,14 @@ class HomeFragment : Fragment() {
         // Edit button
         dialogView.findViewById<ImageButton>(R.id.btnEdit).setOnClickListener {
             // Handle edit action
+            showAddDialog()
+            dialog.dismiss()
 
         }
 
         // Camera button
         dialogView.findViewById<ImageButton>(R.id.btnCamera).setOnClickListener {
-            // Handle camera action
-            // Check for camera permission
-//            checkCameraPermission()
-            // Check for camera permission
-            if (ContextCompat.checkSelfPermission(
-                    requireContext(),
-                    Manifest.permission.CAMERA
-                ) == PackageManager.PERMISSION_GRANTED
-            ) {
-                // We have permission, launch camera
-                dispatchTakePictureIntent()
-            } else {
-                // Request camera permission
-                requestPermissionLauncher.launch(Manifest.permission.CAMERA)
-            }
+
             dialog.dismiss() // Optional: close the dialog when opening camera
         }
 
@@ -150,84 +126,32 @@ class HomeFragment : Fragment() {
 
     }
 
-    private fun dispatchTakePictureIntent() {
-        val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+    //this is the edit dialog for adding items
+    private fun showAddDialog(){
+        val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialoginputbinding, null)
 
-        // Ensure there's a camera activity to handle the intent
-        takePictureIntent.resolveActivity(requireActivity().packageManager)?.also {
-            // Create the file where the photo should go
-            val photoFile: File? = try {
-                createTempImageFile()
-            } catch (ex: IOException) {
-                Toast.makeText(requireContext(), "Error creating image file", Toast.LENGTH_SHORT).show()
-                null
+        editName = dialogView.findViewById(R.id.ingredient_edit_name)
+        editQuantity = dialogView.findViewById(R.id.ingredient_edit_quanitity)
+        editUnit = dialogView.findViewById(R.id.ingredient_edit_unit)
+
+        AlertDialog.Builder(requireContext())
+            .setTitle("Edit Info")
+            .setView(dialogView)
+            .setPositiveButton("OK") { _, _ ->
+                name = editName.text.toString()
+                quantity = editQuantity.text.toString().toIntOrNull() ?: -1// default -1 if input is invalid
+                unit = editUnit.text.toString()
+                // Save or use variables here
+                    Log.d("DialogResult", "Name: $name, Quantity: $quantity, Unit: $unit")
+
+                //adding the item
+                items.add(Item(name,quantity, unit))
+                adapter.notifyItemInserted(items.size - 1)
+
             }
-
-            // Continue only if the file was successfully created
-            photoFile?.also {
-                photoUri = FileProvider.getUriForFile(
-                    requireContext(),
-                    "${requireContext().packageName}.fileprovider",
-                    it
-                )
-                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
-                takePictureLauncher.launch(takePictureIntent)
-            }
-        } ?: run {
-            Toast.makeText(requireContext(), "No camera app found", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    @Throws(IOException::class)
-    private fun createTempImageFile(): File {
-        // Create an image file name
-        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-        val imageFileName = "JPEG_${timeStamp}_"
-        val storageDir = requireContext().cacheDir
-
-        return File.createTempFile(
-            imageFileName, /* prefix */
-            ".jpg", /* suffix */
-            storageDir /* directory */
-        ).apply {
-            // Save the path for later
-            currentPhotoPath = absolutePath
-        }
-    }
-
-    private fun savePhotoToAppStorage() {
-        try {
-            // Get source file
-            val sourceFile = File(currentPhotoPath)
-
-            // Get app's root directory for saving
-            val appDir = requireContext().filesDir
-
-            // Create unique filename
-            val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-            val destinationFile = File(appDir, "Photo_$timeStamp.jpg")
-
-            // Copy file to app storage
-            sourceFile.inputStream().use { input ->
-                FileOutputStream(destinationFile).use { output ->
-                    input.copyTo(output)
-                }
-            }
-
-            // Delete temp file
-            sourceFile.delete()
-
-            // Optional: Notify activity about the photo save
-            (activity as? PhotoListener)?.onPhotoSaved(destinationFile.absolutePath)
-
-        } catch (e: Exception) {
-            Toast.makeText(requireContext(), "Error saving photo: ${e.message}", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    // Interface for communicating with the activity if needed
-    interface PhotoListener {
-        fun onPhotoSaved(photoPath: String)
+            .setNegativeButton("Cancel", null)
+            .create()
+            .show()
     }
 
 
